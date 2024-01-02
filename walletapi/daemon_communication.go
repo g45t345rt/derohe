@@ -892,7 +892,7 @@ func (w *Wallet_Memory) synchistory_block(scid crypto.Hash, topo int64) (err err
 						//fmt.Printf("%d changed_balance %d previous_balance %d len payload %d\n", t, changed_balance, previous_balance, len(tx.Payloads[t].RPCPayload))
 
 						entry := rpc.Entry{Height: bl.Height, Pos: t, TopoHeight: topo, BlockHash: bl.GetHash().String(), TransactionPos: i, TXID: tx.GetHash().String(), Time: time.UnixMilli(int64(bl.Timestamp)), Fees: tx.Fees()}
-
+						entry.SCDATA = tx.SCDATA
 						entry.EWData = EWData
 						ring_member := false
 

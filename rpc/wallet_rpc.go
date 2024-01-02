@@ -73,6 +73,7 @@ type Entry struct {
 	Status         byte      `json:"status"`
 	Time           time.Time `json:"time"`
 	EWData         string    `json:"ewdata"` // encrypted wallet balance at that point in time
+	SCDATA         Arguments `json:"scdata"`
 
 	Data []byte `json:"data"` // data  is entire decrypted dump
 
