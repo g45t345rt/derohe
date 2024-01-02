@@ -54,24 +54,22 @@ var rpc_client = &Client{}
 // single threaded communication to get the daemon status and height
 // this will tell whether the wallet can connection successfully to  daemon or not
 func Connect(endpoint string) (err error) {
+	if endpoint == "" {
+		endpoint = Daemon_Endpoint
+	}
 
-	Daemon_Endpoint_Active = get_daemon_address()
-
-	logger.V(1).Info("Daemon endpoint ", "address", Daemon_Endpoint_Active)
-
-	rpc_client.WS, _, err = websocket.DefaultDialer.Dial("ws://"+Daemon_Endpoint_Active+"/ws", nil)
+	rpc_client.WS, _, err = websocket.DefaultDialer.Dial(endpoint, nil)
 
 	// notify user of any state change
 	// if daemon connection breaks or comes live again
 	if err == nil {
 		if !Connected {
-			logger.V(1).Info("Connection to RPC server successful", "address", "ws://"+Daemon_Endpoint_Active+"/ws")
+			logger.V(1).Info("Connection to RPC server successful", "endpoint", endpoint)
 			Connected = true
 		}
 	} else {
-
 		if Connected {
-			logger.V(1).Error(err, "Connection to RPC server Failed", "endpoint", "ws://"+Daemon_Endpoint_Active+"/ws")
+			logger.V(1).Error(err, "Connection to RPC server Failed", "endpoint", endpoint)
 		}
 		Connected = false
 		return
