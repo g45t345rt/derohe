@@ -318,6 +318,8 @@ var WalletHandler = handler.Map{
 	"transfer":                 handler.New(Transfer),
 	"Transfer":                 handler.New(Transfer),
 	"transfer_split":           handler.New(Transfer),
+	"estimate_fees":            handler.New(EstimateFees),
+	"EstimateFees":             handler.New(EstimateFees),
 	"scinvoke":                 handler.New(ScInvoke),
 }
 
