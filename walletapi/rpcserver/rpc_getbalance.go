@@ -33,7 +33,7 @@ func GetBalance(ctx context.Context, p rpc.GetBalance_Params) (result rpc.GetBal
 
 	w := FromContext(ctx)
 
-	if err := w.wallet.Sync_Wallet_Memory_With_Daemon_internal(p.SCID); err != nil {
+	if err := w.wallet.Sync_Wallet_Token(p.SCID); err != nil {
 		return result, err
 	}
 

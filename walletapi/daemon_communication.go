@@ -63,6 +63,17 @@ var daemon_height int64
 var daemon_topoheight int64
 var last_event_topoheight_tracked int64
 
+var syncing_status = make(map[crypto.Hash]bool)
+
+func IsSyncing(scId crypto.Hash) bool {
+	status, ok := syncing_status[scId]
+	if ok {
+		return status
+	}
+
+	return false
+}
+
 // return daemon height
 func Get_Daemon_Height() int64 {
 	return daemon_height
@@ -114,7 +125,6 @@ func Notify_broadcaster(req *jrpc2.Request) {
 	default:
 		logger.V(1).Info("Notification received", "method", req.Method())
 	}
-
 }
 
 var Daemon_Endpoint string
@@ -180,6 +190,7 @@ func test_connectivity() (err error) {
 }
 
 // triggers syncing with wallet every 5 seconds
+/*
 func (w *Wallet_Memory) sync_loop() {
 	//logger = globals.Logger
 	for {
@@ -216,6 +227,7 @@ func (w *Wallet_Memory) sync_loop() {
 		time.Sleep(timeout) // wait 5 seconds
 	}
 }
+*/
 
 func (cli *Client) Call(method string, params interface{}, result interface{}) error {
 	return cli.RPC.CallResult(context.Background(), method, params, result)
@@ -227,13 +239,14 @@ func (w *Wallet_Memory) IsDaemonOnlineCached() bool {
 }
 
 // currently process url  with compatibility for older ip address
+/*
 func buildurl(endpoint string) string {
 	if strings.IndexAny(endpoint, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") >= 0 { // url is already complete
 		return strings.TrimSuffix(endpoint, "/")
 	} else {
 		return "http://" + endpoint
 	}
-}
+}*/
 
 // this is as simple as it gets
 // single threaded communication to get the daemon status and height
@@ -247,8 +260,8 @@ func IsDaemonOnline() bool {
 
 // sync the wallet with daemon, this is instantaneous and can be done with a single call
 // we have now the apis to avoid polling
-func (w *Wallet_Memory) Sync_Wallet_Memory_With_Daemon_internal(scid crypto.Hash) (err error) {
-
+func (w *Wallet_Memory) Sync_Wallet_Token(scid crypto.Hash) (err error) {
+	fmt.Println(scid)
 	if !IsDaemonOnline() {
 		daemon_height = 0
 		daemon_topoheight = 0
@@ -280,17 +293,16 @@ func (w *Wallet_Memory) Sync_Wallet_Memory_With_Daemon_internal(scid crypto.Hash
 					}
 				}
 
+				w.Lock()
 				if scid.IsZero() {
 					// Event sender
 					w.account.Balance_Mature = b
 				}
-				w.Lock()
 				w.account.Balance[scid] = b
-				w.Unlock()
 				w.SyncHistory(scid) // also update statement
+				w.Unlock()
+				w.save_if_disk() // save wallet
 			}
-
-			w.save_if_disk() // save wallet
 		} else {
 			return err
 		}
@@ -299,10 +311,9 @@ func (w *Wallet_Memory) Sync_Wallet_Memory_With_Daemon_internal(scid crypto.Hash
 	return
 }
 
-func (w *Wallet_Memory) Sync_Wallet_Memory_With_Daemon() (err error) {
+func (w *Wallet_Memory) Sync_Wallet_Dero() (err error) {
 	var scid crypto.Hash
-
-	return w.Sync_Wallet_Memory_With_Daemon_internal(scid)
+	return w.Sync_Wallet_Token(scid)
 }
 
 func (w *Wallet_Memory) NameToAddress(name string) (addr string, err error) {
@@ -392,10 +403,10 @@ func (w *Wallet_Memory) GetEncryptedBalanceAtTopoHeight(scid crypto.Hash, topohe
 		}
 	}()
 
-	if !w.GetMode() { // if wallet is in offline mode , we cannot do anything
-		err = fmt.Errorf("wallet is in offline mode")
-		return
-	}
+	//if !w.GetMode() { // if wallet is in offline mode , we cannot do anything
+	//	err = fmt.Errorf("wallet is in offline mode")
+	//	return
+	//}
 
 	if !IsDaemonOnline() {
 		err = fmt.Errorf("offline or not connected")
@@ -451,7 +462,7 @@ func (w *Wallet_Memory) GetEncryptedBalanceAtTopoHeight(scid crypto.Hash, topohe
 		return
 	}
 
-	if topoheight == -1 {
+	if scid.IsZero() && topoheight == -1 {
 		daemon_height = result.DHeight
 		daemon_topoheight = result.DTopoheight
 
@@ -535,14 +546,17 @@ func (w *Wallet_Memory) Random_ring_members(scid crypto.Hash) (alist []string) {
 // sync history of wallet from blockchain
 var sync_multilock sync.Mutex // make sync history single threaded
 func (w *Wallet_Memory) SyncHistory(scid crypto.Hash) (balance uint64) {
-	sync_multilock.Lock()
-	defer sync_multilock.Unlock()
-
 	defer func() {
+		sync_multilock.Unlock()
+		syncing_status[scid] = false
+
 		if r := recover(); r != nil {
 			logger.V(1).Error(nil, "Recovered while syncing connecting", "r", r, "stack", debug.Stack())
 		}
 	}()
+
+	sync_multilock.Lock()
+	syncing_status[scid] = true
 
 	if w.getEncryptedBalanceresult(scid).Registration < 0 { // unregistered so skip
 		return
@@ -1094,10 +1108,10 @@ func (w *Wallet_Memory) synchistory_block(scid crypto.Hash, topo int64) (err err
 		w.InsertReplace(scid, e)
 	}
 
-	if len(local_entries) >= 1 {
-		w.save_if_disk() // save wallet()
-		//	w.db.Sync()
-	}
+	//if len(local_entries) >= 1 {
+	//w.save_if_disk() // save wallet()
+	//	w.db.Sync()
+	//}
 
 	return nil
 

@@ -71,7 +71,7 @@ type Account struct {
 	RingMembers map[string]int64 `json:"ring_members"` // ring members
 
 	SaveChangesEvery time.Duration `json:"-"` // default is zero
-	lastsaved        time.Time
+	//lastsaved        time.Time
 
 	// do not build entire history from 0, only maintain top history
 	TrackRecentBlocks int64 `json:"-"` // only scan top blocks, default is zero, means everything
@@ -149,6 +149,7 @@ func (w *Wallet_Memory) InsertReplace(scid crypto.Hash, e rpc.Entry) {
 	w.account.EntriesNative[scid] = entries
 }
 
+/*
 func (w *Wallet_Memory) TokenAdd(scid crypto.Hash) (err error) {
 	w.Lock()
 	defer w.Unlock()
@@ -161,6 +162,7 @@ func (w *Wallet_Memory) TokenAdd(scid crypto.Hash) (err error) {
 
 	return nil
 }
+*/
 
 // generate keys from using random numbers
 func Generate_Keys_From_Random() (user *Account, err error) {
@@ -430,11 +432,12 @@ func (w *Wallet_Memory) Get_Keys() _Keys {
 
 // by default a wallet opens in Offline Mode
 // however, if the wallet is in online mode, it can be made offline instantly using this
+/*
 func (w *Wallet_Memory) SetOfflineMode() bool {
 	current_mode := w.wallet_online_mode
 	w.wallet_online_mode = false
 	return current_mode
-}
+}*/
 
 func (w *Wallet_Memory) SetNetwork(mainnet bool) bool {
 	w.account.mainnet = mainnet
@@ -446,9 +449,10 @@ func (w *Wallet_Memory) GetNetwork() bool {
 }
 
 // return current mode
+/*
 func (w *Wallet_Memory) GetMode() bool {
 	return w.wallet_online_mode
-}
+}*/
 
 // use the endpoint set  by the program
 func (w *Wallet_Memory) SetDaemonAddress(endpoint string) string {
@@ -462,15 +466,16 @@ func SetDaemonAddress(endpoint string) string {
 
 // by default a wallet opens in Offline Mode
 // however, It can be made online by calling this
+/*
 func (w *Wallet_Memory) SetOnlineMode() bool {
 	current_mode := w.wallet_online_mode
 	w.wallet_online_mode = true
 
-	if current_mode != true { // trigger subroutine if previous mode was offline
-		go w.sync_loop() // start sync subroutine
-	}
+	//if current_mode != true { // trigger subroutine if previous mode was offline
+	//go w.sync_loop() // start sync subroutine
+	//}
 	return current_mode
-}
+}*/
 
 // by default a wallet opens in Offline Mode
 // however, It can be made online by calling this

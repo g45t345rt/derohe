@@ -50,9 +50,9 @@ func Transfer(ctx context.Context, p rpc.Transfer_Params) (result rpc.Transfer_R
 		}
 	}
 
-	if !w.wallet.GetMode() { // if wallet is in online mode, use the fees, provided by the daemon, else we need to use what is provided by the user
-		return result, fmt.Errorf("Wallet is in offline mode")
-	}
+	//if !w.wallet.GetMode() { // if wallet is in online mode, use the fees, provided by the daemon, else we need to use what is provided by the user
+	//	return result, fmt.Errorf("Wallet is in offline mode")
+	//}
 
 	// translate rpc to arguments
 

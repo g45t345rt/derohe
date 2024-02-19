@@ -70,9 +70,9 @@ func EstimateFees(ctx context.Context, p rpc.EstimateFees_Params) (result rpc.Es
 	result.Tx_Fees = w.wallet.EstimateTxFees(len(p.Transfers), int(p.Ringsize), p.SC_RPC, tx_type)
 	// Compute gas fees if necessary
 	if tx_type == transaction.SC_TX {
-		if !w.wallet.GetMode() {
-			return result, fmt.Errorf("wallet is in offline mode, cannot estimate gas fees")
-		}
+		//if !w.wallet.GetMode() {
+		//	return result, fmt.Errorf("wallet is in offline mode, cannot estimate gas fees")
+		//}
 
 		result.Gas_Fees, err = w.wallet.EstimateGasFees(p)
 		if err != nil {

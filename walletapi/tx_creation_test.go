@@ -16,31 +16,32 @@
 
 package walletapi
 
-import "io"
-import "os"
-import "fmt"
-import "time"
-import "testing"
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
 
-//import "crypto/rand"
-import "path/filepath"
+	"github.com/docopt/docopt-go"
 
-//import "encoding/hex"
-//import "encoding/binary"
-//import "runtime/pprof"
+	//import "crypto/rand"
 
-import "github.com/docopt/docopt-go"
+	//import "encoding/hex"
+	//import "encoding/binary"
+	//import "runtime/pprof"
 
-import derodrpc "github.com/deroproject/derohe/cmd/derod/rpc"
-
-import "github.com/deroproject/derohe/globals"
-import "github.com/deroproject/derohe/config"
-import "github.com/deroproject/derohe/rpc"
-import "github.com/deroproject/derohe/blockchain"
-import "github.com/deroproject/derohe/transaction"
-import "github.com/deroproject/derohe/cryptography/crypto"
-import "github.com/deroproject/derohe/cryptography/bn256"
+	"github.com/deroproject/derohe/blockchain"
+	derodrpc "github.com/deroproject/derohe/cmd/derod/rpc"
+	"github.com/deroproject/derohe/config"
+	"github.com/deroproject/derohe/cryptography/bn256"
+	"github.com/deroproject/derohe/cryptography/crypto"
+	"github.com/deroproject/derohe/globals"
+	"github.com/deroproject/derohe/rpc"
+	"github.com/deroproject/derohe/transaction"
+)
 
 func init() {
 	globals.InitializeLog(io.Discard, io.Discard)
@@ -203,15 +204,15 @@ func Test_Creation_TX(t *testing.T) {
 	wgenesis.SetDaemonAddress(rpcport)
 	wsrc.SetDaemonAddress(rpcport)
 	wdst.SetDaemonAddress(rpcport)
-	wgenesis.SetOnlineMode()
-	wsrc.SetOnlineMode()
-	wdst.SetOnlineMode()
+	//wgenesis.SetOnlineMode()
+	//wsrc.SetOnlineMode()
+	//wdst.SetOnlineMode()
 
 	defer os.Remove(wsrc_temp_db) // cleanup after test
 	defer os.Remove(wdst_temp_db) // cleanup after test
 
 	time.Sleep(time.Second)
-	if err = wsrc.Sync_Wallet_Memory_With_Daemon(); err != nil {
+	if err = wsrc.Sync_Wallet_Dero(); err != nil {
 		t.Fatalf("wallet sync error err %s chain height %d", err, chain.Get_Height())
 	}
 
@@ -235,7 +236,7 @@ func Test_Creation_TX(t *testing.T) {
 	wdst.account.Ringsize = 2
 
 	// accounts are reversed
-	wdst.Sync_Wallet_Memory_With_Daemon()
+	wdst.Sync_Wallet_Dero()
 	reverse_tx, err := wdst.TransferPayload0([]rpc.Transfer{rpc.Transfer{Destination: wsrc.GetAddress().String(), Amount: 1}}, 0, false, rpc.Arguments{}, 0, false)
 	if err != nil {
 		t.Fatalf("Cannot create transaction, err %s", err)
@@ -265,9 +266,9 @@ func Test_Creation_TX(t *testing.T) {
 	}
 
 	simulator_chain_mineblock(chain, wgenesis.GetAddress(), t) // mine a block at tip, this is block at height 2
-	wgenesis.Sync_Wallet_Memory_With_Daemon()
-	wsrc.Sync_Wallet_Memory_With_Daemon()
-	wdst.Sync_Wallet_Memory_With_Daemon()
+	wgenesis.Sync_Wallet_Dero()
+	wsrc.Sync_Wallet_Dero()
+	wdst.Sync_Wallet_Dero()
 
 	var zerohash crypto.Hash
 	if _, nonce, _, _, _ := wsrc.GetEncryptedBalanceAtTopoHeight(zerohash, 2, wsrc.GetAddress().String()); nonce != 2 {
@@ -298,7 +299,7 @@ func Test_Creation_TX(t *testing.T) {
 		} else {
 			tx_set = append(tx_set, tx)
 			simulator_chain_mineblock(chain, wgenesis.GetAddress(), t) // mine a block at tip
-			wdst.Sync_Wallet_Memory_With_Daemon()
+			wdst.Sync_Wallet_Dero()
 		}
 	}
 
@@ -310,7 +311,7 @@ func Test_Creation_TX(t *testing.T) {
 			t.Fatalf("Cannot add transfer tx  to pool err %s", err)
 		}
 		simulator_chain_mineblock(chain, wgenesis.GetAddress(), t) // mine a block at tip
-		wdst.Sync_Wallet_Memory_With_Daemon()
+		wdst.Sync_Wallet_Dero()
 	}
 
 	//	fmt.Printf("balance src %v\n", wsrc.account.Balance_Mature)
@@ -330,9 +331,9 @@ func Test_Creation_TX(t *testing.T) {
 	}
 
 	simulator_chain_mineblock(chain, wgenesis.GetAddress(), t) // mine a block at tip
-	wgenesis.Sync_Wallet_Memory_With_Daemon()
-	wsrc.Sync_Wallet_Memory_With_Daemon()
-	wdst.Sync_Wallet_Memory_With_Daemon()
+	wgenesis.Sync_Wallet_Dero()
+	wsrc.Sync_Wallet_Dero()
+	wdst.Sync_Wallet_Dero()
 
 	post_transfer_src_balance = wsrc.account.Balance_Mature
 	post_transfer_dst_balance = wdst.account.Balance_Mature
@@ -357,9 +358,9 @@ func Test_Creation_TX(t *testing.T) {
 	}
 	simulator_chain_mineblock(chain, wgenesis.GetAddress(), t) // mine a block at tip
 
-	wgenesis.Sync_Wallet_Memory_With_Daemon()
-	wsrc.Sync_Wallet_Memory_With_Daemon()
-	wdst.Sync_Wallet_Memory_With_Daemon()
+	wgenesis.Sync_Wallet_Dero()
+	wsrc.Sync_Wallet_Dero()
+	wdst.Sync_Wallet_Dero()
 
 	if _, nonce, _, _, _ := wsrc.GetEncryptedBalanceAtTopoHeight(zerohash, 11, wsrc.GetAddress().String()); nonce != 9 {
 		t.Fatalf("nonce not valid. please dig. expected 9 actual %d", nonce)

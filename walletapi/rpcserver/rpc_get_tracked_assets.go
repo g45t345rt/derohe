@@ -39,7 +39,7 @@ func GetTrackedAssets(ctx context.Context, p rpc.GetTrackedAssets_Params) (resul
 	for scid := range acc.Balance {
 		if !p.SkipBalanceCheck {
 			// Be sure that the balance is up to date
-			if err := w.wallet.Sync_Wallet_Memory_With_Daemon_internal(scid); err != nil {
+			if err := w.wallet.Sync_Wallet_Token(scid); err != nil {
 				continue
 			}
 		}
