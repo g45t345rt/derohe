@@ -261,7 +261,6 @@ func IsDaemonOnline() bool {
 // sync the wallet with daemon, this is instantaneous and can be done with a single call
 // we have now the apis to avoid polling
 func (w *Wallet_Memory) Sync_Wallet_Token(scid crypto.Hash) (err error) {
-	fmt.Println(scid)
 	if !IsDaemonOnline() {
 		daemon_height = 0
 		daemon_topoheight = 0
