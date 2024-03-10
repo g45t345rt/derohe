@@ -155,13 +155,16 @@ func (c *Connection) Close() error {
 	return c.conn.Close()
 }
 
+// *RPCResponse to the return whatever we like and avoid executing the method
+type RequestHandlerFunc func(*ApplicationData, *jrpc2.Request) (Permission, interface{}, error)
+
 type XSWD struct {
 	// The websocket connected to and its app data
 	applications map[*Connection]ApplicationData
 	// function to request access of a dApp to wallet
 	appHandler func(*ApplicationData) bool
 	// function to request the permission
-	requestHandler func(*ApplicationData, *jrpc2.Request) Permission
+	requestHandler RequestHandlerFunc
 	handlerMutex   sync.Mutex
 	server         *http.Server
 	logger         logr.Logger
@@ -182,11 +185,11 @@ const XSWD_PORT = 44326
 
 // Create a new XSWD server which allows to connect any dApp to the wallet safely through a websocket
 // Each request done by the session will wait on the appHandler and requestHandler to be accepted
-func NewXSWDServer(wallet *walletapi.Wallet_Disk, appHandler func(*ApplicationData) bool, requestHandler func(*ApplicationData, *jrpc2.Request) Permission) *XSWD {
+func NewXSWDServer(wallet *walletapi.Wallet_Disk, appHandler func(*ApplicationData) bool, requestHandler RequestHandlerFunc) *XSWD {
 	return NewXSWDServerWithPort(XSWD_PORT, wallet, appHandler, requestHandler)
 }
 
-func NewXSWDServerWithPort(port int, wallet *walletapi.Wallet_Disk, appHandler func(*ApplicationData) bool, requestHandler func(*ApplicationData, *jrpc2.Request) Permission) *XSWD {
+func NewXSWDServerWithPort(port int, wallet *walletapi.Wallet_Disk, appHandler func(*ApplicationData) bool, requestHandler RequestHandlerFunc) *XSWD {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("XSWD server"))
@@ -580,9 +583,18 @@ func (x *XSWD) handleMessage(app *ApplicationData, request *jrpc2.Request) inter
 	}
 
 	app.SetIsRequesting(true)
-	perm := x.requestPermission(app, request)
+	perm, res, err := x.requestPermission(app, request)
 	app.SetIsRequesting(false)
+
 	if perm.IsPositive() {
+		if err != nil {
+			return ResponseWithError(request, jrpc2.Errorf(code.InternalError, "Error while handling request method %q: %v", methodName, err))
+		}
+
+		if res != nil {
+			return ResponseWithResult(request, res)
+		}
+
 		wallet_context := *x.context
 		wallet_context.Extra["app_data"] = app
 		ctx := context.WithValue(context.Background(), "wallet_context", &wallet_context)
@@ -604,10 +616,10 @@ func (x *XSWD) handleMessage(app *ApplicationData, request *jrpc2.Request) inter
 }
 
 // Request the permission for a method and save its result if it must be persisted
-func (x *XSWD) requestPermission(app *ApplicationData, request *jrpc2.Request) Permission {
+func (x *XSWD) requestPermission(app *ApplicationData, request *jrpc2.Request) (perm Permission, result interface{}, err error) {
 	perm, found := app.Permissions[request.Method()]
 	if !found {
-		perm = x.requestHandler(app, request)
+		perm, result, err = x.requestHandler(app, request)
 
 		if perm == AlwaysDeny || perm == AlwaysAllow {
 			app.Permissions[request.Method()] = perm
@@ -622,7 +634,7 @@ func (x *XSWD) requestPermission(app *ApplicationData, request *jrpc2.Request) P
 		x.logger.V(1).Info("Permission already granted for method", "method", request.Method(), "permission", perm)
 	}
 
-	return perm
+	return
 }
 
 // block until the session is closed and read all its messages

@@ -138,13 +138,14 @@ func handle_prompt_command(l *readline.Instance, line string) {
 		case 0:
 			break
 		case 1:
-			scid := crypto.HashHexToHash(line_parts[0])
-			if err := wallet.TokenAdd(scid); err != nil {
-				logger.Error(err, "Token")
-			} else {
-				wallet.Save_Wallet()
-				fmt.Fprintf(l.Stderr(), "SCID "+color_green+"%s"+color_white+" added\n\n", scid.String())
-			}
+			/*
+				scid := crypto.HashHexToHash(line_parts[0])
+				if err := wallet.TokenAdd(scid); err != nil {
+					logger.Error(err, "Token")
+				} else {
+					wallet.Save_Wallet()
+					fmt.Fprintf(l.Stderr(), "SCID "+color_green+"%s"+color_white+" added\n\n", scid.String())
+				}*/
 		default:
 			logger.Error(err, "not implemented")
 		}
@@ -1100,10 +1101,10 @@ func display_spend_key(l *readline.Instance, wallet *walletapi.Wallet_Disk) {
 
 // start a rescan from block 0
 func rescan_bc(wallet *walletapi.Wallet_Disk) {
-	if wallet.GetMode() { // trigger rescan we the wallet is online
-		wallet.Clean() // clean existing data from wallet
-		//wallet.Rescan_From_Height(0)
-	}
+	//if wallet.GetMode() { // trigger rescan we the wallet is online
+	wallet.Clean() // clean existing data from wallet
+	//wallet.Rescan_From_Height(0)
+	//}
 
 }
 
@@ -1117,12 +1118,13 @@ func valid_registration_or_display_error(l *readline.Instance, wallet *walletapi
 // show the transfers to the user originating from this account
 func show_transfers(l *readline.Instance, wallet *walletapi.Wallet_Disk, scid crypto.Hash, limit uint64) {
 
-	if wallet.GetMode() && walletapi.IsDaemonOnline() { // if wallet is in offline mode , we cannot do anything
-		if err := wallet.Sync_Wallet_Memory_With_Daemon_internal(scid); err != nil {
-			logger.Error(err, "Error syncing wallet", "scid", scid.String())
-			return
-		}
-	}
+	/*
+		if wallet.GetMode() && walletapi.IsDaemonOnline() { // if wallet is in offline mode , we cannot do anything
+			if err := wallet.Sync_Wallet_Memory_With_Daemon_internal(scid); err != nil {
+				logger.Error(err, "Error syncing wallet", "scid", scid.String())
+				return
+			}
+		}*/
 
 	in := true
 	out := true

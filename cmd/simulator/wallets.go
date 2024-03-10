@@ -119,14 +119,14 @@ func register_wallets(chain *blockchain.Blockchain) {
 			logger.Error(err, "Cannot add regtx to pool")
 		}
 		wallets[i].SetDaemonAddress(rpcport)
-		wallets[i].SetOnlineMode() // make wallet connect to daemon
+		//wallets[i].SetOnlineMode() // make wallet connect to daemon
 
 		if v, ok := globals.Arguments["--use-xswd"]; ok && v.(bool) {
 			// XSWD server accept everything by default
 			xswd.NewXSWDServerWithPort(wallet_ports_xswd_start+i, wallets[i], func(app *xswd.ApplicationData) bool {
 				return true
-			}, func(app *xswd.ApplicationData, request *jrpc2.Request) xswd.Permission {
-				return xswd.Allow
+			}, func(ad *xswd.ApplicationData, r *jrpc2.Request) (xswd.Permission, interface{}, error) {
+				return xswd.Allow, nil, nil
 			})
 		}
 

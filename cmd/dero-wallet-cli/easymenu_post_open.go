@@ -524,8 +524,8 @@ func handle_easymenu_post_open_command(l *readline.Instance, line string) (proce
 		xswd_server = xswd.NewXSWDServer(wallet, func(ad *xswd.ApplicationData) bool {
 			// TODO inform if it was already or not, and with permissions inside
 			return ReadStringXSWDPrompt(l, ad.OnClose, fmt.Sprintf("Allow application %s (%s) to access your wallet (y/N): ", ad.Name, ad.Url), []string{"Y", "N"}) == "Y"
-		}, func(ad *xswd.ApplicationData, r *jrpc2.Request) xswd.Permission {
-			return AskPermissionForRequest(l, ad, r)
+		}, func(ad *xswd.ApplicationData, r *jrpc2.Request) (xswd.Permission, interface{}, error) {
+			return AskPermissionForRequest(l, ad, r), nil, nil
 		})
 	case "17":
 		if xswd_server == nil {
