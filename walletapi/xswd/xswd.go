@@ -165,15 +165,18 @@ type XSWD struct {
 	appHandler func(*ApplicationData) bool
 	// function to request the permission
 	requestHandler RequestHandlerFunc
-	handlerMutex   sync.Mutex
-	server         *http.Server
-	logger         logr.Logger
-	context        *rpcserver.WalletContext
-	wallet         *walletapi.Wallet_Disk
-	rpcHandler     handler.Map
-	running        bool
-	requests       chan messageRequest
-	registers      chan messageRegistration
+	// some wallet may not want to support this feature - should be disable by default
+	// if enable the wallet should display all permissions set so the user before continuing
+	useStoredPermissions bool
+	handlerMutex         sync.Mutex
+	server               *http.Server
+	logger               logr.Logger
+	context              *rpcserver.WalletContext
+	wallet               *walletapi.Wallet_Disk
+	rpcHandler           handler.Map
+	running              bool
+	requests             chan messageRequest
+	registers            chan messageRegistration
 	// mutex for applications map
 	sync.Mutex
 }
@@ -199,13 +202,14 @@ func NewXSWDServerWithPort(port int, wallet *walletapi.Wallet_Disk, appHandler f
 	logger := globals.Logger.WithName("XSWD")
 
 	xswd := &XSWD{
-		applications:   make(map[*Connection]ApplicationData),
-		appHandler:     appHandler,
-		requestHandler: requestHandler,
-		logger:         logger,
-		server:         server,
-		context:        rpcserver.NewWalletContext(logger, wallet),
-		wallet:         wallet,
+		applications:         make(map[*Connection]ApplicationData),
+		appHandler:           appHandler,
+		requestHandler:       requestHandler,
+		logger:               logger,
+		server:               server,
+		context:              rpcserver.NewWalletContext(logger, wallet),
+		wallet:               wallet,
+		useStoredPermissions: false,
 		// don't create a different API, we provide the same
 		rpcHandler: rpcserver.WalletHandler,
 		requests:   make(chan messageRequest),
@@ -444,7 +448,7 @@ func (x *XSWD) addApplication(r *http.Request, conn *Connection, app *Applicatio
 		}
 
 		// Signature can be optional but permissions can't exist without signature
-		if app.Permissions != nil {
+		if app.Permissions != nil && x.useStoredPermissions {
 			if (len(app.Permissions) > 0 && len(app.Signature) != 64) || len(app.Permissions) > 255 {
 				x.logger.V(1).Info("Invalid permissions", "permissions", len(app.Permissions))
 				return false
